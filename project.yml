@@ -1,45 +1,58 @@
 name: dsh
 options:
   bundleIdPrefix: com.qingyao
-  deploymentTarget: "16.0"
-  createGitignore: true
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
 settings:
   base:
-    SWIFT_VERSION: "5.10"
     MARKETING_VERSION: 2.0.0
-    CURRENT_PROJECT_VERSION: 20261022.01
+    CURRENT_PROJECT_VERSION: 20261022.02
+    SWIFT_VERSION: "5.10"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGN_IDENTITY: ""
+    EXPANDED_CODE_SIGN_IDENTITY: ""
+    DEVELOPMENT_TEAM: ""
 targets:
   dsh:
     type: application
     platform: iOS
-    sources: [Sources]
-    sources_omit_glob:
-      - "Sources/ISH/**"
-    dependencies: []
+    sources:
+      - Sources
+      - Resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.qingyao.dsh
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-        TARGETED_DEVICE_FAMILY: "1"
-        CODE_SIGNING_ALLOWED: NO
-        CODE_SIGNING_REQUIRED: NO
-        CODE_SIGN_IDENTITY: ""
+        PRODUCT_NAME: dsh
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
-        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_CFBundleDisplayName: DeepSeek Harness
+        GCC_PRECOMPILE_PREFIX_HEADER: "NO"
+        CLANG_ENABLE_MODULES: "YES"
     info:
+      path: Info.plist
       properties:
-        CFBundleDisplayName: DSH
+        CFBundleDisplayName: DeepSeek Harness
         CFBundleShortVersionString: 2.0.0
         CFBundleURLTypes:
           - CFBundleURLName: com.qingyao.dsh
             CFBundleTypeRole: Editor
             CFBundleURLSchemes: [dsh]
-        UIBackgroundModes: []
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
           NSAllowsArbitraryLoads: true
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
+schemes:
+  dsh:
+    build:
+      targets:
+        dsh: all
+    run:
+      config: Debug
+    archive:
+      config: Release
