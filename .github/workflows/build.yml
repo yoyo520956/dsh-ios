@@ -1,0 +1,85 @@
+name: build
+on:
+  workflow_dispatch:
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pick Xcode (fallback chain)
+        run: |
+          for v in 16.4 16.3 16.2; do
+            if [ -d "/Applications/Xcode_$v.app" ]; then
+              sudo xcode-select -s "/Applications/Xcode_$v.app"; break
+            fi
+          done
+          xcodebuild -version
+      - name: Install toolchain
+        run: brew install xcodegen meson ninja cmake llvm lld
+      - name: Fetch dsh rootfs (release → artifact fallback)
+        run: |
+          set -e
+          mkdir -p Resources
+          OK=0
+          curl -fL --retry 2 --max-time 600 -o Resources/rootfs.tar.gz \
+            "https://github.com/yoyo520956/dsh-ios/releases/download/rootfs-latest/dsh-rootfs.tgz" && OK=1
+          if [ "$OK" != "1" ]; then
+            echo "release 未就绪，回退 artifact 下载"
+            AID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/yoyo520956/dsh-ios/actions/artifacts?name=dsh-rootfs" \
+              | python3 -c "import json,sys; a=json.load(sys.stdin)['artifacts']; print(a[0]['id'] if a else '')")
+            test -n "$AID"
+            curl -fL --max-time 600 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -o rootfs.zip "https://api.github.com/repos/yoyo520956/dsh-ios/actions/artifacts/$AID/zip"
+            unzip -o rootfs.zip -d . && mv dsh-rootfs.tgz Resources/rootfs.tar.gz
+          fi
+          ls -la Resources/rootfs.tar.gz
+          tar -tzf Resources/rootfs.tar.gz | head -5
+      - name: Generate project
+        run: xcodegen generate
+      - name: Verify sources in pbxproj
+        run: |
+          ls -R Sources | head -30
+          SW=$(grep -c '\.swift' harness.xcodeproj/project.pbxproj || true)
+          echo "swift refs in pbxproj: $SW"
+          test "$SW" -ge 15 || { echo 'FAKE SUCCESS GUARD: pbxproj missing swift refs'; exit 1; }
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild -project harness.xcodeproj -scheme harness \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/harness.xcarchive archive 2>&1 | tail -300
+      - name: Export & Package IPA
+        run: |
+          APP=$(find build/harness.xcarchive -name 'harness.app' | head -1)
+          test -n "$APP" && test -f "$APP/harness" || { echo 'FAKE SUCCESS GUARD: no binary'; exit 1; }
+          mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          test -f "$APP/rootfs.tar.gz" || { echo 'FAKE SUCCESS GUARD: rootfs.tar.gz missing in bundle'; exit 1; }
+          test -d "$APP/Assets.car" -o -f "$APP/Assets.car" || echo 'note: no Assets.car (icons via plist default)'
+          cd build && zip -qry harness.ipa Payload && ls -la harness.ipa
+          SZ=$(stat -f%z harness.ipa)
+          test "$SZ" -gt 100000000 || { echo "FAKE SUCCESS GUARD: IPA too small ($SZ)"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harness-ipa
+          path: build/harness.ipa
+      - name: Publish release (IPA)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER=$(python3 -c "
+          import re
+          s=open('project.yml').read()
+          print(re.search(r'MARKETING_VERSION: ([\d.]+)', s).group(1))
+          ")
+          TAG="v$VER"
+          gh release create "$TAG" --title "harness $TAG" --notes "DeepSeek Harness iOS：iSH 跑原版 dsh web + WKWebView 1:1" 2>/dev/null || true
+          gh release upload "$TAG" build/harness.ipa --clobber
+          gh release view "$TAG" --json assets -q '.assets[].name'
