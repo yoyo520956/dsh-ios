@@ -6,8 +6,8 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: 2.0.0
-    CURRENT_PROJECT_VERSION: 20261022.02
+    MARKETING_VERSION: 2.0.1
+    CURRENT_PROJECT_VERSION: 20261022.03
     SWIFT_VERSION: "5.10"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGNING_REQUIRED: "NO"
@@ -35,7 +35,7 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: DeepSeek Harness
-        CFBundleShortVersionString: 2.0.0
+        CFBundleShortVersionString: 2.0.1
         CFBundleURLTypes:
           - CFBundleURLName: com.qingyao.dsh
             CFBundleTypeRole: Editor

@@ -200,6 +200,9 @@ struct AboutSettingsView: View {
                 }
                 .padding(.vertical, 24)
             }
+            Section("诊断") {
+                NavigationLink { DSHLogView() } label: { Label("运行日志", systemImage: "doc.text.magnifyingglass") }
+            }
             Section("架构") {
                 LabeledContent("界面", value: "SwiftUI + dsw 设计系统")
                 LabeledContent("引擎", value: "DeepSeek API 原生直连")
@@ -220,4 +223,19 @@ struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController { UIActivityViewController(activityItems: items, applicationActivities: nil) }
     func updateUIViewController(_ v: UIActivityViewController, context: Context) {}
+}
+
+
+// MARK: - 运行日志
+struct DSHLogView: View {
+    @State private var lines: [String] = []
+    var body: some View {
+        List(lines.reversed(), id: \.self) { l in
+            Text(l).font(DSW.TypeScale.mono).foregroundStyle(DSW.Alias.textSecondary).textSelection(.enabled)
+        }
+        .navigationTitle("运行日志")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { lines = DSHLog.shared.snapshot() }
+        .refreshable { lines = DSHLog.shared.snapshot() }
+    }
 }

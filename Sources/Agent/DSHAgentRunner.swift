@@ -44,21 +44,9 @@ public final class DSHAgentRunner: ObservableObject {
                     if Task.isCancelled { return }
                     rounds += 1
                     self.phase = .streaming
-                    var wire: [[String: Any]] = [["role": "system", "content": presetPrompt]]
-                    for m in store.sessions.first(where: { $0.id == store.activeSessionID })?.messages ?? [] {
-                        switch m.role {
-                        case .system: break
-                        case .user: wire.append(["role": "user", "content": m.text])
-                        case .assistant:
-                            if let tcs = m.toolCalls, !tcs.isEmpty {
-                                wire.append(["role": "assistant", "content": m.text, "tool_calls": tcs.map { ["id": $0.callID, "type": "function", "function": ["name": $0.name, "arguments": $0.arguments]] }])
-                            } else { wire.append(["role": "assistant", "content": m.text]) }
-                        case .tool:
-                            if let tcs = m.toolCalls {
-                                for tc in tcs { wire.append(["role": "tool", "tool_call_id": tc.callID, "content": tc.result ?? ""]) }
-                            }
-                        }
-                    }
+                    let snapshot = store.sessions.first(where: { $0.id == store.activeSessionID })?.messages ?? []
+                    let wire = Self.buildWire(messages: snapshot, systemPrompt: presetPrompt)
+                    DSHLog.log("round\(rounds) wire=\(wire.count)条 tools=\(toolIDs.joined(separator: ","))")
                     let tools = DSHToolRegistry.wireSchemas(toolIDs)
                     let outcome = try await self.streamOne(provider: provider, model: model, wire: wire, tools: tools, userText: userText, rounds: rounds)
                     if outcome.tools.isEmpty { return }
@@ -71,6 +59,17 @@ public final class DSHAgentRunner: ObservableObject {
                         var result = ""
                         do { result = try await tool.execute(args: call.args) } catch { result = "工具执行失败：\(error.localizedDescription)" }
                         ToolResult.write(callID: call.id, messageID: call.messageID, result: result)
+                        // 闭环关键：append role=tool 消息，下一轮 wire 才有 tool_call_id 配对响应（否则上游 400）
+                        let toolMsg = DSHMessage(role: .tool, text: result)
+                        DSHLog.log("tool \(call.name) -> \(result.prefix(80))")
+                        store.bindMutate { s in
+                            s.append(toolMsg)
+                            // 给 tool 消息挂 callID 供 wire 配对
+                            if var last = s.messages.last {
+                                last.toolCalls = [DSHToolCall(callID: call.id, name: call.name, arguments: call.args, result: result, status: .done)]
+                                s.messages[s.messages.count - 1] = last
+                            }
+                        }
                     }
                 }
             } catch let e as DSHAPIError { self.phase = .failed(DSHText.err(e)) }
@@ -79,6 +78,43 @@ public final class DSHAgentRunner: ObservableObject {
     }
 
     struct ToolCall { let id: String; let name: String; let args: String; let messageID: UUID }
+
+    // 唯一 wire 出口：全历史 + tool 成对 + 裁剪 + 防 400 校验（改坏这里 CI 回放测试会红）
+    static func buildWire(messages: [DSHMessage], systemPrompt: String) -> [[String: Any]] {
+        var wire: [[String: Any]] = [["role": "system", "content": systemPrompt]]
+        let msgs = messages.suffix(80)   // 约 40 轮上下文窗口
+        for m in msgs {
+            switch m.role {
+            case .system: continue
+            case .user:
+                if !m.text.isEmpty { wire.append(["role": "user", "content": m.text]) }
+            case .assistant:
+                if let tcs = m.toolCalls, !tcs.isEmpty {
+                    var item: [String: Any] = ["role": "assistant", "content": m.text]
+                    item["tool_calls"] = tcs.map { ["id": $0.callID, "type": "function", "function": ["name": $0.name, "arguments": $0.arguments]] }
+                    wire.append(item)
+                } else if !m.text.isEmpty {
+                    wire.append(["role": "assistant", "content": m.text])
+                }
+            case .tool:
+                if let tcs = m.toolCalls {
+                    for tc in tcs {
+                        wire.append(["role": "tool", "tool_call_id": tc.callID, "content": tc.result ?? ""])
+                    }
+                }
+            }
+        }
+        // 防 400：末尾若是 assistant(tool_calls) 而缺 tool 响应 → 补空响应
+        if case let last? = wire.last, last["role"] as? String == "assistant",
+           let tcs = last["tool_calls"] as? [[String: Any]] {
+            for tc in tcs {
+                if let id = tc["id"] as? String {
+                    wire.append(["role": "tool", "tool_call_id": id, "content": ""])
+                }
+            }
+        }
+        return wire
+    }
 
     private func streamOne(provider: DSHProvider, model: DSHModel, wire: [[String: Any]], tools: [[String: Any]], userText: String, rounds: Int) async throws -> (tools: [ToolCall], text: String) {
         let store = DSHStore.shared
