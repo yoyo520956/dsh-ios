@@ -1,65 +1,46 @@
-name: harness
+name: dsh
 options:
   bundleIdPrefix: com.qingyao
-  deploymentTarget:
-    iOS: "16.0"
-  createIntermediateGroups: true
+  deploymentTarget: "16.0"
+  createGitignore: true
 settings:
   base:
-    MARKETING_VERSION: 1.0.3
-    CURRENT_PROJECT_VERSION: 20261022.04
     SWIFT_VERSION: "5.10"
-    CODE_SIGNING_ALLOWED: "NO"
-    CODE_SIGNING_REQUIRED: "NO"
-    CODE_SIGN_IDENTITY: ""
-    EXPANDED_CODE_SIGN_IDENTITY: ""
-    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: 2.0.0
+    CURRENT_PROJECT_VERSION: 20261022.01
 targets:
-  harness:
+  dsh:
     type: application
     platform: iOS
-    sources:
-      - Sources
-      - Resources
+    sources: [Sources]
+    sources_omit_glob:
+      - "Sources/ISH/**"
+    dependencies: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.qingyao.dsh
-        PRODUCT_NAME: harness
+        INFOPLIST_FILE: ""
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        INFOPLIST_KEY_CFBundleDisplayName: DeepSeek Harness
-        LIBRARY_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/vendor/out"
-        OTHER_LDFLAGS: "$(inherited) -lish -lish_emu -lfakefs -larchive -lz -lbz2 -lxml2 -liconv"
-        HEADER_SEARCH_PATHS: '"$(SRCROOT)/vendor/ish" "$(SRCROOT)/vendor/ish/deps/libarchive/libarchive"'
-        GCC_PRECOMPILE_PREFIX_HEADER: "NO"
-        CLANG_ENABLE_MODULES: "YES"
-        SWIFT_OBJC_BRIDGING_HEADER: Sources/Terminal/IshBridge.h
-    preBuildScripts:
-      - path: scripts/build-ish.sh
-        name: Build iSH engine
-        basedOnDependencyAnalysis: false
-        outputFiles:
-          - $(SRCROOT)/vendor/out/libish.a
-          - $(SRCROOT)/vendor/out/libish_emu.a
-          - $(SRCROOT)/vendor/out/libfakefs.a
-          - $(SRCROOT)/vendor/out/libarchive.a
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
     info:
-      path: Info.plist
       properties:
-        CFBundleDisplayName: DeepSeek Harness
-        UILaunchScreen: {}
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        CFBundleDisplayName: DSH
+        CFBundleShortVersionString: 2.0.0
+        CFBundleURLTypes:
+          - CFBundleURLName: com.qingyao.dsh
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes: [dsh]
+        UIBackgroundModes: []
         NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-          NSAllowsArbitraryLoads: false
-        UIBackgroundModes: [audio]
-schemes:
-  harness:
-    build:
-      targets:
-        harness: all
-    run:
-      config: Debug
-    archive:
-      config: Release
+          NSAllowsArbitraryLoads: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
