@@ -87,7 +87,8 @@ public final class DSHAgentRunner: ObservableObject {
         var toolsOut: [ToolCall] = []
         var toolIndexMap: [String: Int] = [:]
         var assistantID: UUID?
-        for try await ev in client.streamChat(provider: provider, model: model, messages: wire, tools: tools, temperature: temp, thinking: store.config.thinkingEnabled) {
+        let stream = await client.streamChat(provider: provider, model: model, messages: wire, tools: tools, temperature: temp, thinking: store.config.thinkingEnabled)
+        for try await ev in stream {
             if assistantID == nil {
                 store.bindMutate { s in s.append(DSHMessage(role: .assistant, model: model.id)) }
                 assistantID = store.sessions.first(where: { $0.id == store.activeSessionID })?.messages.last?.id

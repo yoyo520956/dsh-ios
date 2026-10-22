@@ -121,10 +121,10 @@ public struct DSHBashTool: DSHAgentTool {
             return s.components(separatedBy: "\n").filter { $0.contains(kw) }.joined(separator: "\n")
         case "find":
             let kw = a.first?.replacingOccurrences(of: "*", with: "") ?? ""
-            let deep = (try? fm.subpathsOfDirectory(at: cwd)) ?? []
+            let deep = (try? fm.subpathsOfDirectory(atPath: cwd.path)) ?? []
             return deep.filter { kw.isEmpty || $0.contains(kw) }.prefix(300).joined(separator: "\n")
         case "tree":
-            let deep = (try? fm.subpathsOfDirectory(at: cwd)) ?? []
+            let deep = (try? fm.subpathsOfDirectory(atPath: cwd.path)) ?? []
             return deep.prefix(500).map { String(repeating: "  ", count: $0.components(separatedBy: "/").count - 1) + "/" + $0.components(separatedBy: "/").last! }.joined(separator: "\n")
         case "help": return "支持：ls ll cat mkdir touch rm cp mv head tail wc grep find tree echo date pwd help"
         default: return "\(cmd): 不支持（沙盒命令子集，help 查看）"
