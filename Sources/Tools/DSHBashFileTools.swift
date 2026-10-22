@@ -102,12 +102,12 @@ public struct DSHBashTool: DSHAgentTool {
             return s.count > 12000 ? String(s.prefix(12000)) + "\n…[截断]" : s
         case "mkdir": guard let p = a.first else { return "mkdir: 缺目录" }; try? fm.createDirectory(at: resolve(p), withIntermediateDirectories: true); return "ok"
         case "touch": guard let p = a.first else { return "touch: 缺文件" }; fm.createFile(atPath: resolve(p).path, contents: Data()); return "ok"
-        case "rm": guard let p = a.first else { return "rm: 缺路径" }; try? fm.removeItem(at: resolve(p)); return "ok"
+        case "rm": guard let p = a.first else { return "rm: 缺路径" }; try? fm.removeItem(atPath: resolve(p).path); return "ok"
         case "cp", "mv":
             guard a.count >= 2 else { return "\(cmd): 缺源/目标" }
             let src = resolve(a[0]); var dst = resolve(a[1])
             if (try? src.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false { dst = dst.appendingPathComponent(src.lastPathComponent) } else if (try? dst.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false { dst = dst.appendingPathComponent(src.lastPathComponent) }
-            if cmd == "cp" { try? fm.copyItem(at: src, to: dst) } else { try? fm.moveItem(at: src, to: dst) }
+            if cmd == "cp" { try? fm.copyItem(atPath: src.path, toPath: dst.path) } else { try? fm.moveItem(atPath: src.path, toPath: dst.path) }
             return "ok"
         case "head", "tail":
             guard let p = a.first, let s = try? String(contentsOf: resolve(p), encoding: .utf8) else { return "\(cmd): 读不到" }

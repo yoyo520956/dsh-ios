@@ -4,6 +4,7 @@ import SwiftUI
 public struct DSHApp: App {
     @StateObject private var store = DSHStore.shared
     @StateObject private var runner = DSHAgentRunner()
+    @StateObject private var scheduler = DSHScheduler()
 
     public init() {}
 
@@ -15,7 +16,7 @@ public struct DSHApp: App {
                 .preferredColorScheme(.dark)   // 原版默认深色
                 .onAppear {
                     if store.activeSessionID == nil { store.newSession() }
-                    store.scheduler.start()
+                    scheduler.start()
                 }
                 .onChange(of: store.autoRunPrompt) { newPrompt in
                     if let p = newPrompt, !p.isEmpty {

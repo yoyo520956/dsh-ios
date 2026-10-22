@@ -59,8 +59,6 @@ public final class DSHStore: ObservableObject {
         save()
     }
 
-    // MARK: Schedule（前台到点检查，触发后由 Chat 承接）
-    public var scheduler: DSHScheduler = .init()
 
     // MARK: 持久化
     struct State: Codable {
