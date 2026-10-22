@@ -3,7 +3,7 @@ import Foundation
 // MARK: - 消息模型（OpenAI wire 格式 + 扩展字段）
 public struct DSHToolCall: Codable, Identifiable, Equatable {
     public var id: String { callID }
-    public let callID: String
+    public var callID: String
     public var name: String
     public var arguments: String          // JSON 字符串（流式时增量拼接）
     public var result: String? = nil      // 工具执行结果

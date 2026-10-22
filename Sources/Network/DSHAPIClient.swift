@@ -39,7 +39,7 @@ public actor DSHAPIClient {
 
     private func streamOnce(provider: DSHProvider, model: DSHModel, messages: [[String: Any]], tools: [[String: Any]]?, temperature: Double, thinking: Bool) async throws -> [DSHStreamEvent] {
         guard !provider.apiKey.isEmpty else { throw DSHAPIError.noKey }
-        guard var url = URL(string: provider.baseURL.trimmingCharacters(in: .whitespaceAndNewlines).hasSuffix("/") ? String(provider.baseURL.dropLast()) + "/chat/completions" : provider.baseURL + "/chat/completions") else { throw DSHAPIError.badURL }
+        guard var url = URL(string: provider.baseURL.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("/") ? String(provider.baseURL.dropLast()) + "/chat/completions" : provider.baseURL + "/chat/completions") else { throw DSHAPIError.badURL }
         if provider.type == .custom { url = normalizeCustom(url) }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
