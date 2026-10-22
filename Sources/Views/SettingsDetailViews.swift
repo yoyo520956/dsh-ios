@@ -130,7 +130,7 @@ struct ScheduleSettingsView: View {
             ForEach($store.tasks) { t in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack { Text(t.name.wrappedValue).font(DSW.TypeScale.body); Spacer(); Toggle("", isOn: t.enabled).labelsHidden() }
-                    Text("每天 \(String(format: "%02d:%02d", t.hour.wrappedValue, t.minute.wrappedValue)) · \(t.prompt.prefix(60))")
+                    Text("每天 \(String(format: "%02d:%02d", t.hour.wrappedValue, t.minute.wrappedValue)) · \(t.prompt.wrappedValue.prefix(60))")
                         .font(DSW.TypeScale.caption).foregroundStyle(DSW.Alias.textTertiary)
                 }
                 .swipeActions { Button(role: .destructive) { store.tasks.removeAll { $0.id == t.id }; store.save() } label: { Label("删除", systemImage: "trash") } }
@@ -146,18 +146,19 @@ struct ScheduleSettingsView: View {
 struct ExportSettingsView: View {
     @EnvironmentObject var store: DSHStore
     @State private var shareURL: URL?
+    @State private var showShare = false
     var body: some View {
         Form {
             Section("导出当前会话") {
-                Button("导出为 Markdown") { shareURL = exportMD() }
-                Button("导出全部会话 JSON") { shareURL = exportJSON() }
+                Button("导出为 Markdown") { shareURL = exportMD(); showShare = true }
+                Button("导出全部会话 JSON") { shareURL = exportJSON(); showShare = true }
             }
             Text("导出走系统分享面板（AirDrop/文件/微信）。")
                 .font(DSW.TypeScale.caption).foregroundStyle(DSW.Alias.textTertiary)
         }
         .navigationTitle("导入导出")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $shareURL) { u in ShareSheet(items: [u]) }
+        .sheet(isPresented: $showShare) { if let u = shareURL { ShareSheet(items: [u]) } }
     }
     private func exportMD() -> URL {
         var md = "# 会话导出\n\n"
@@ -173,7 +174,7 @@ struct ExportSettingsView: View {
         return url
     }
     private func exportJSON() -> URL {
-        let enc = JSONEncoder(); enc.outputFormatting = [.prettyEncoded, .sortedKeys]; enc.dateEncodingStrategy = .iso8601
+        let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]; enc.dateEncodingStrategy = .iso8601
         let data = (try? enc.encode(store.sessions)) ?? Data()
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dsh-sessions-\(Int(Date().timeIntervalSince1970)).json")
         try? data.write(to: url)

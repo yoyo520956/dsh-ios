@@ -77,7 +77,7 @@ struct ChatView: View {
                     }
                     .padding(.vertical, DSW.Space.md)
                 }
-                .onChange(of: session?.messages.count ?? 0) { _ in
+                .onChange(of: session?.messages.count ?? 0) { _, _ in
                     if let last = session?.messages.last { withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
                 if let sid = session?.id, let mi = session?.messages.last?.id {
