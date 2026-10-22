@@ -1,3 +1,25 @@
+name: build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: xcodegen
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate
+          test -f dsh.xcodeproj/project.pbxproj
+      - name: build archive
+        run: |
+          set -euo pipefail
+          xcodebuild -project dsh.xcodeproj -scheme dsh -configuration Release -archivePath "$PWD/build/dsh.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" | tail -30
       - name: export ipa
         run: |
           set -euo pipefail
@@ -5,39 +27,31 @@
           VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Info.plist")
           test -f "$APP/dsh" || { echo "FAKE GUARD: no binary"; exit 1; }
           test -f "$APP/Assets.car" || { echo "FAKE GUARD: Assets.car missing"; exit 1; }
-          ICONS=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles" "$APP/Info.plist" 2>/dev/null || echo "-")
           set +e
           mkdir -p build/ipa
-          cat > build/export.plist <<'PLISTEOF'
+          cat > build/export.plist <<'PEOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>method</key><string>development</string>
-            <key>signingStyle</key><string>manual</string>
-            <key>compileBitcode</key><false/>
-          </dict></plist>
-          PLISTEOF
+          <plist version="1.0"><dict><key>method</key><string>development</string></dict></plist>
+          PEOF
           xcodebuild -exportArchive -archivePath "$PWD/build/dsh.xcarchive" -exportPath build/ipa -exportOptionsPlist build/export.plist CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" -allowProvisioningUpdates >/tmp/exp.log 2>&1
           XCEXP=$?
           set -e
           if [ $XCEXP -ne 0 ] || ! find build/ipa -name "*.ipa" | grep -q .; then
-            echo "xcodebuild export failed (expected on unsigned CI) → manual Payload zip"
+            echo "xcodebuild export failed (expected unsigned CI) → manual Payload zip"
             mkdir -p build/pkg/Payload
             cp -R "$APP" build/pkg/Payload/
-            rm -f build/pkg/Payload/*.app/_CodeSignature 2>/dev/null || true
             (cd build/pkg && zip -qry ../dsh-$VERSION-unsigned.ipa Payload)
           else
             find build/ipa -name "*.ipa" -exec mv {} "build/dsh-$VERSION-unsigned.ipa" \;
           fi
           test -f "build/dsh-$VERSION-unsigned.ipa"
-          SZ=$(stat -f%z "build/dsh-$VERSION-unsigned.ipa")
-          echo "IPA size: $SZ"
           cp "build/dsh-$VERSION-unsigned.ipa" build/dsh-unsigned.ipa
           ls -la build/dsh-unsigned.ipa
-      - name: upload artifact + release
+      - name: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           test -f build/dsh-unsigned.ipa
-          gh release create "v2.0.0" build/dsh-unsigned.ipa --title "dsh-ios v2.0.0 (native)" --notes "DeepSeek Harness iOS 原生移植版：全量功能 + iOS 界面样式" 2>/dev/null || gh release upload v2.0.0 build/dsh-unsigned.ipa --clobber
+          gh release create "v2.0.0" build/dsh-unsigned.ipa --title "dsh-ios v2.0.0 (native)" --notes "DeepSeek Harness iOS 原生移植：功能 1:1 全量 + iOS 界面样式" 2>/dev/null || gh release upload v2.0.0 build/dsh-unsigned.ipa --clobber
