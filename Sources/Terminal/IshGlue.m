@@ -124,8 +124,17 @@ static void glue_exit_hook(struct task *task, int code) {
         }
         return NO;
     }
-    NSURL *tmp = [[NSURL fileURLWithPath:NSTemporaryDirectory()]
-                  URLByAppendingPathComponent:[NSProcessInfo.processInfo globallyUniqueString]];
+    // 父目录 roots/ 必须存在，否则 moveItem 报 "folder containing the latter doesn't exist"
+    NSURL *rootsDir = [rootDir URLByDeletingLastPathComponent];
+    if (![fm createDirectoryAtURL:rootsDir withIntermediateDirectories:YES attributes:nil error:nil]) {
+        if (error) *error = [NSError errorWithDomain:@"IshGlue" code:-5 userInfo:@{NSLocalizedDescriptionKey:
+            [NSString stringWithFormat:@"无法创建父目录 %@", rootsDir.path]}];
+        return NO;
+    }
+    // tmp 放 Documents 同卷（rename 秒完成，避免 /tmp 跨盘 copy + 占系统 tmp 配额）
+    NSURL *tmp = [rootsDir URLByAppendingPathComponent:
+                  [NSString stringWithFormat:@".import-%@", NSProcessInfo.processInfo.globallyUniqueString]];
+    if ([fm fileExistsAtPath:tmp.path]) [fm removeItemAtURL:tmp error:nil];
     struct fakefsify_error fs_err;
     struct progress p = {NULL, null_progress};
     // fakefs_import(fs) 会创建目录 fs，内含 data/（文件树）+ meta.db（元数据库）
@@ -142,7 +151,16 @@ static void glue_exit_hook(struct task *task, int code) {
     }
     // 整目录搬到位：tmp → <rootDir>（data/ 与 meta.db 成为其子项，fakefs_mount 按 source 的邻居找 meta.db）
     if ([fm fileExistsAtPath:rootDir.path]) [fm removeItemAtURL:rootDir error:nil];
-    return [fm moveItemAtURL:tmp toURL:rootDir error:error];
+    if (![fm moveItemAtURL:tmp toURL:rootDir error:error]) {
+        // 失败自愈：清掉半截 rootDir 再 rename 一次（同卷 rename 仍可能因目标残留失败）
+        [fm removeItemAtURL:rootDir error:nil];
+        if ([fm moveItemAtURL:tmp toURL:rootDir error:error]) return YES;
+        [fm removeItemAtURL:tmp error:nil];
+        if (error) *error = [NSError errorWithDomain:@"IshGlue" code:-6 userInfo:@{NSLocalizedDescriptionKey:
+            [NSString stringWithFormat:@"rootfs 导入后搬移失败：%@ → %@（存储空间不足或权限问题，可点重试）", tmp.lastPathComponent, rootDir.path]}];
+        return NO;
+    }
+    return YES;
 }
 
 static int step_err(int step, int err) { return -(step * 1000 + (-err)); }
