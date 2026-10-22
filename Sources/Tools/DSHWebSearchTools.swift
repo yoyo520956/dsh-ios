@@ -4,7 +4,12 @@ import Foundation
 public struct DSHWebTool: DSHAgentTool {
     public let name = "webfetch"
     public let description = "抓取网页正文（去导航/广告）。参数：{url: \"https://...\"}，返回净化文本前 6000 字"
-    public var schema: [String: Any] { ["type": "object", "properties": ["url": ["type": "string"], "required": ["url"]] }
+    public var schema: [String: Any] {
+        var m: [String: Any] = ["type": "object"]
+        m["properties"] = ["url": ["type": "string"]]
+        m["required"] = ["url"]
+        return m
+    }
     public init() {}
 
     public func execute(args: String) async throws -> String {
@@ -30,7 +35,12 @@ public struct DSHWebTool: DSHAgentTool {
 public struct DSHSearchTool: DSHAgentTool {
     public let name = "search"
     public let description = "联网搜索（DuckDuckGo）。参数 {query: \"关键词\"}，返回前 8 条标题+摘要+链接"
-    public var schema: [String: Any] { ["type": "object", "properties": ["query": ["type": "string"], "required": ["query"]] }
+    public var schema: [String: Any] {
+        var m: [String: Any] = ["type": "object"]
+        m["properties"] = ["query": ["type": "string"]]
+        m["required"] = ["query"]
+        return m
+    }
     public init() {}
 
     public func execute(args: String) async throws -> String {

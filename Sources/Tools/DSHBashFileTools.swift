@@ -4,11 +4,16 @@ import Foundation
 public struct DSHFileTool: DSHAgentTool {
     public let name = "file"
     public let description = "读写列改沙盒文件。参数 JSON：{action: read|write|list|edit, path: 相对沙盒路径, content?: 写内容, old?: edit 原文, new?: edit 新文}"
-    public var schema: [String: Any] { ["type": "object", "properties": [
-        "action": ["type": "string", "enum": ["read", "write", "list", "edit"]],
-        "path": ["type": "string"],
-        "content": ["type": "string"],
-        "old": ["type": "string"], "new": ["type": "string"]], "required": ["action", "path"]] }
+    public var schema: [String: Any] {
+        var m: [String: Any] = ["type": "object"]
+        m["properties"] = [
+            "action": ["type": "string", "enum": ["read", "write", "list", "edit"]],
+            "path": ["type": "string"],
+            "content": ["type": "string"],
+            "old": ["type": "string"], "new": ["type": "string"]]
+        m["required"] = ["action", "path"]
+        return m
+    }
 
     public init() {}
 
@@ -45,7 +50,12 @@ public struct DSHFileTool: DSHAgentTool {
 public struct DSHBashTool: DSHAgentTool {
     public let name = "bash"
     public let description = "沙盒内执行命令子集：ls/cd/cat/mkdir/rm/cp/mv/echo/head/tail/wc/grep/find/pwd/date/touch/tree，支持单管道。参数：{command: \"ls -l\"}"
-    public var schema: [String: Any] { ["type": "object", "properties": ["command": ["type": "string"]], "required": ["command"]] }
+    public var schema: [String: Any] {
+        var m: [String: Any] = ["type": "object"]
+        m["properties"] = ["command": ["type": "string"]]
+        m["required"] = ["command"]
+        return m
+    }
     public init() {}
     private var root: URL { DSHStore.sandboxURL }
     private var cwd: URL { root }
