@@ -84,13 +84,20 @@ struct SandboxBrowserView: View {
         List {
             if path != "." { Button("…上一层") { let p = path.components(separatedBy: "/").dropLast(2).joined(separator: "/"); path = p.isEmpty ? "." : p; load() } }
             ForEach(items, id: \.self) { n in
-                let full = "\(path == "." ? "" : path)/\(n)"
+                let name = String(n.dropFirst(2))
                 if n.hasPrefix("d ") {
-                    Button { path = String(n.dropFirst(2)); load() } label: { Label(String(n.dropFirst(2)), systemImage: "folder") }
+                    Button { path = name; load() } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "folder").foregroundStyle(DSW.Alias.link)
+                            Text(name).foregroundStyle(DSW.Alias.textPrimary)
+                        }
+                    }
                 } else {
-                    Label(String(n.dropFirst(2)), systemImage: "doc")
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc").foregroundStyle(DSW.Alias.textSecondary)
+                        Text(name).foregroundStyle(DSW.Alias.textPrimary)
+                    }
                 }
-                Text(full).font(DSW.TypeScale.caption2).foregroundStyle(.clear).frame(height: 0)
             }
         }
         .navigationTitle("沙盒")
