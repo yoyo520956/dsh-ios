@@ -6,7 +6,7 @@ public enum DSHAPIError: Error, Equatable { case noKey, badURL, http(Int, String
 public struct DSHStreamEvent {
     public var contentDelta: String?
     public var reasoningDelta: String?
-    public var toolCallDelta: (index: Int, id: String?, name: String?, argsDelta: String)?
+    public var toolCallDelta: (index: Int, id: String?, name: String?, argsDelta: String?)?
     public var finishReason: String?
     public var usage: (prompt: Int, completion: Int)?
 }
