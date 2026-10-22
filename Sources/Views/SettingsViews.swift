@@ -71,7 +71,7 @@ struct GeneralSettingsView: View {
         }
         .navigationTitle("通用")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: store.config.temperature) { _, _ in store.save() }
+        .onChange(of: store.config.temperature) { _ in store.save() }
     }
 }
 

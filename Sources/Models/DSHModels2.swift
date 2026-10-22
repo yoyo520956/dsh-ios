@@ -9,8 +9,8 @@ public struct DSHAgentPreset: Codable, Identifiable, Equatable {
     public var modelID: String?
     public var temperature: Double?
     public var builtin: Bool = false
-    public init(name: String, systemPrompt: String, toolIDs: [String] = ["file","bash","webfetch","search"], modelID: String? = nil, builtin: Bool = false) {
-        self.id = UUID(); self.name = name; self.systemPrompt = systemPrompt; self.toolIDs = toolIDs; self.modelID = modelID; self.builtin = builtin
+    public init(id: UUID = UUID(), name: String, systemPrompt: String, toolIDs: [String] = ["file","bash","webfetch","search"], modelID: String? = nil, builtin: Bool = false) {
+        self.id = id; self.name = name; self.systemPrompt = systemPrompt; self.toolIDs = toolIDs; self.modelID = modelID; self.builtin = builtin
     }
     public static let defaults: [DSHAgentPreset] = [
         DSHAgentPreset(name: "默认助手", systemPrompt: "你是 DeepSeek Harness 助手，严谨、直接、中文回复。", builtin: true),

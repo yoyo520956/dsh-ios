@@ -16,7 +16,8 @@ public final class DSHStore: ObservableObject {
 
     private let fm = FileManager.default
     private lazy var stateURL: URL = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("DSH", isDirectory: true).appendingPathComponent("state.json")
+        .appendingPathComponent("DSH", isDirectory: true)
+        .appendingPathComponent("state.json")
 
     private init() { load() }
 
@@ -83,7 +84,7 @@ public final class DSHStore: ObservableObject {
         } catch { print("[DSH] save fail: \(error)") }
     }
     public func load() {
-        guard let data = fm.contents(at: stateURL) else { bootstrap(); return }
+        guard let data = try? Data(contentsOf: stateURL) else { bootstrap(); return }
         do {
             let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
             let st = try dec.decode(State.self, from: data)

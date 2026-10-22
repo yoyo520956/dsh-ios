@@ -17,7 +17,7 @@ public struct DSHApp: App {
                     if store.activeSessionID == nil { store.newSession() }
                     store.scheduler.start()
                 }
-                .onChange(of: store.autoRunPrompt) { _, newPrompt in
+                .onChange(of: store.autoRunPrompt) { newPrompt in
                     if let p = newPrompt, !p.isEmpty {
                         store.autoRunPrompt = nil
                         runner.run(userText: p)

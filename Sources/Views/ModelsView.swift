@@ -13,7 +13,7 @@ struct ModelsSettingsView: View {
                             Text("DeepSeek").font(DSW.TypeScale.headline)
                             Text(official.id).font(DSW.TypeScale.caption).foregroundStyle(DSW.Alias.textTertiary)
                         }
-                        VStack(align: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text("API Key").font(DSW.TypeScale.caption).foregroundStyle(DSW.Alias.textSecondary)
                             SecureField("Enter your API key", text: Binding(
                                 get: { official.apiKey },
