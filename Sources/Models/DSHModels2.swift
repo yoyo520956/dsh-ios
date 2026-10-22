@@ -58,8 +58,8 @@ public struct DSHScheduleTask: Codable, Identifiable, Equatable {
     public var enabled: Bool
     public var lastFired: Date?
     public enum RepeatMode: String, Codable { case daily, weekdays, once }
-    public init(name: String, prompt: String, hour: Int = 9, minute: Int = 0, repeat: RepeatMode = .daily) {
-        self.id = UUID(); self.name = name; self.prompt = prompt; self.hour = hour; self.minute = minute; self.repeatMode = repeat; self.enabled = true
+    public init(name: String, prompt: String, hour: Int = 9, minute: Int = 0, repeatMode: RepeatMode = .daily) {
+        self.id = UUID(); self.name = name; self.prompt = prompt; self.hour = hour; self.minute = minute; self.repeatMode = repeatMode; self.enabled = true
     }
 }
 
