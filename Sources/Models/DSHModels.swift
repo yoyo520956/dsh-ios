@@ -9,8 +9,8 @@ public struct DSHToolCall: Codable, Identifiable, Equatable {
     public var result: String? = nil      // 工具执行结果
     public var status: Status = .running
     public enum Status: String, Codable { case running, done, failed }
-    public init(callID: String = UUID().uuidString, name: String, arguments: String = "") {
-        self.callID = callID; self.name = name; self.arguments = arguments
+    public init(callID: String = UUID().uuidString, name: String, arguments: String = "", result: String? = nil, status: Status = .running) {
+        self.callID = callID; self.name = name; self.arguments = arguments; self.result = result; self.status = status
     }
 }
 
